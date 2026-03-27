@@ -3,10 +3,9 @@ import pandas as pd
 import mysql.connector
 import plotly.express as px
 
-# ---------- PAGE CONFIG ----------
+# ---------- PAGE ----------
 st.set_page_config(layout="wide")
-
-st.title("📱 Device Share Analysis")
+st.title("📱 Device Dominance")
 
 # ---------- DB CONNECTION ----------
 connection = mysql.connector.connect(
@@ -16,68 +15,51 @@ connection = mysql.connector.connect(
     database="phonepe_db"
 )
 
-# ---------- YOUR SQL QUERY ----------
+# ---------- QUERY (STRICTLY YOUR LOGIC) ----------
 query = """
 SELECT 
     Brand,
-    SUM(Registered_users) AS Total_Users,
-    AVG(App_opens) AS Avg_App_Opens,
-    SUM(Registered_users * App_opens) AS Device_share
+    SUM(Registered_users) AS Total_Users
 FROM aggregated_user
 GROUP BY Brand
-ORDER BY Device_share DESC;
+ORDER BY Total_Users DESC;
 """
 
 df = pd.read_sql(query, connection)
 
-# ---------- DISPLAY DATA ----------
-st.subheader("📊 Device Share Table")
+# ---------- TABLE ----------
+st.subheader("📊 Device Dominance Table")
 st.dataframe(df, use_container_width=True)
 
-# ---------- 1. DEVICE SHARE BAR CHART ----------
-st.subheader("📈 Device Share Dominance")
+# ---------- BAR CHART ----------
+st.subheader("📈 Device Dominance by Brand")
 
-fig1 = px.bar(
+fig = px.bar(
     df,
     x="Brand",
-    y="Device_share",
+    y="Total_Users",
     text_auto=True,
     color="Brand",
-    title="Device Share by Brand"
+    title="Total Registered Users per Brand"
 )
 
-st.plotly_chart(fig1, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)
 
-# ---------- 2. PIE CHART (MARKET SHARE) ----------
-st.subheader("🥧 Market Share Distribution")
+# ---------- PIE CHART ----------
+st.subheader("🥧 Market Share (Device Dominance)")
 
 fig2 = px.pie(
     df,
     names="Brand",
-    values="Device_share",
-    title="Device Share Contribution"
+    values="Total_Users",
+    title="Brand-wise User Share"
 )
 
 st.plotly_chart(fig2, use_container_width=True)
-
-# ---------- 3. USERS vs APP OPENS ----------
-st.subheader("🔥 Engagement Strength")
-
-fig3 = px.scatter(
-    df,
-    x="Avg_App_Opens",
-    y="Total_Users",
-    size="Device_share",
-    color="Brand",
-    hover_name="Brand",
-    title="Users vs App Opens (Bubble = Device Share)"
-)
-
-st.plotly_chart(fig3, use_container_width=True)
 
 # ---------- TOP BRAND ----------
 top_brand = df.iloc[0]
 
 st.success(
-    f"🏆 Top Brand: {top_brand['Brand']} | Device Share: {round(top_brand['Device_share'],2)}"
+    f"🏆 Dominant Brand: {top_brand['Brand']} with {int(top_brand['Total_Users'])} users"
 )
